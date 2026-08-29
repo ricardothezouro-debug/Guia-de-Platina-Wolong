@@ -17,7 +17,18 @@ def mission_key(index: int) -> str:
 
 
 def flag_key(index: int) -> str:
+    """Caixa única de "todas as bandeiras" — usada nas batalhas sem guia detalhado."""
     return f"flags_{index}"
+
+
+def one_flag_key(mission_index: int, flag_index: int) -> str:
+    """Uma bandeira específica de uma batalha."""
+    return f"flag_{mission_index}_{flag_index}"
+
+
+def flags_of(mission_name: str) -> list[dict]:
+    """As bandeiras detalhadas de uma batalha (vazio se não houver guia)."""
+    return guide_data.FLAGS.get(mission_name, {}).get("flags", [])
 
 
 def collectible_key(index: int) -> str:
@@ -68,9 +79,13 @@ def collectibles_of(mission_name: str) -> list[tuple[int, dict]]:
 def all_keys() -> list[str]:
     """Todas as chaves marcáveis do guia, na ordem das abas."""
     keys: list[str] = []
-    for i in range(len(guide_data.MISSIONS)):
+    for i, mission in enumerate(guide_data.MISSIONS):
         keys.append(mission_key(i))
-        keys.append(flag_key(i))
+        detalhadas = flags_of(mission["name"])
+        if detalhadas:
+            keys += [one_flag_key(i, j) for j in range(len(detalhadas))]
+        else:
+            keys.append(flag_key(i))
     keys.append(HUB_KEY)
     keys += collectible_keys()
     keys += [close_key(i) for i in range(len(guide_data.CLOSE))]

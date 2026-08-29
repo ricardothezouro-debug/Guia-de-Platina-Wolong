@@ -30,6 +30,8 @@ _TIER_COLORS = {
     "bronze": "#C77B3B", "prata": "#B8C0CC", "ouro": "#E7C64A", "platina": "#7FE7FF",
 }
 _KIND_COLORS = {"Tábua": "#E7C64A", "Shitieshou": "#B9FF43", "Casca": "#37F2FF"}
+# bandeira de Batalha é checkpoint (vermelho do jogo); a de Marcação só sobe Fortitude
+_FLAG_COLORS = {"Batalha": "#F87171", "Marcação": "#7FE7FF"}
 
 _PROGRESS_QSS = (
     "QProgressBar{background:#0B111A;border:1px solid #273140;border-radius:9px;"
@@ -545,8 +547,11 @@ class GuidePage(QWidget):
             for i, mission in entries:
                 card = self._mission_card(i, mission)
                 body_layout.addWidget(card)
-                haystack = _norm(_flat(mission) + " " + " ".join(
-                    _flat(c) for _, c in keys.collectibles_of(mission["name"])))
+                haystack = _norm(" ".join([
+                    _flat(mission),
+                    " ".join(_flat(c) for _, c in keys.collectibles_of(mission["name"])),
+                    " ".join(_flat(f) for f in keys.flags_of(mission["name"])),
+                ]))
                 self._mission_rows.append((card, haystack, mission["part"], i))
             layout.addWidget(body)
             self._part_groups.append((head_holder, body, [i for i, _ in entries]))
@@ -584,14 +589,49 @@ class GuidePage(QWidget):
         if mission["trophies"]:
             _detail(card, "Troféus aqui", ", ".join(mission["trophies"]))
 
-        card.addWidget(self._checkbox(
-            keys.flag_key(index), "Todas as bandeiras desta batalha erguidas"))
+        self._add_flags(card, index, mission)
 
         found = keys.collectibles_of(mission["name"])
         if found:
             card.addWidget(_label(f"<b>Coletáveis ({len(found)}):</b>", "Muted"))
             for item_index, item in found:
                 card.addWidget(self._item_block(item_index, item))
+        return frame
+
+    def _add_flags(self, card: QVBoxLayout, index: int, mission: dict) -> None:
+        """As bandeiras da batalha: uma linha com foto para cada, quando há guia."""
+        detalhadas = keys.flags_of(mission["name"])
+        if not detalhadas:
+            card.addWidget(self._checkbox(
+                keys.flag_key(index), "Todas as bandeiras desta batalha erguidas"))
+            card.addWidget(_label(
+                "Esta batalha não tem guia de bandeira publicado — confira o total na tela "
+                "de seleção de missão do jogo.", "Muted"))
+            return
+        info = guide_data.FLAGS[mission["name"]]
+        card.addWidget(_label(
+            f"<b>Bandeiras ({info['battle']} de Batalha + {info['marking']} de Marcação):</b>",
+            "Muted"))
+        for j, flag in enumerate(detalhadas):
+            card.addWidget(self._flag_block(index, j, flag))
+
+    def _flag_block(self, mission_index: int, flag_index: int, flag: dict) -> QFrame:
+        frame = QFrame()
+        frame.setObjectName("ItemBlock")
+        frame.setStyleSheet(_ITEM_QSS)
+        box = QVBoxLayout(frame)
+        box.setContentsMargins(11, 9, 11, 9)
+        box.setSpacing(5)
+        head = QHBoxLayout()
+        head.setSpacing(8)
+        head.addWidget(self._checkbox(keys.one_flag_key(mission_index, flag_index)), 0,
+                       Qt.AlignmentFlag.AlignTop)
+        head.addWidget(_tag(flag["kind"], _FLAG_COLORS.get(flag["kind"], "#A8B0BC")), 0,
+                       Qt.AlignmentFlag.AlignTop)
+        head.addWidget(_label(f"Bandeira de {flag['kind']} #{flag['num']}", "SectionTitle"), 1)
+        box.addLayout(head)
+        box.addWidget(_label(flag["where"], "Muted"))
+        self._add_image(box, flag["image"])
         return frame
 
     def _item_block(self, index: int, item: dict) -> QFrame:

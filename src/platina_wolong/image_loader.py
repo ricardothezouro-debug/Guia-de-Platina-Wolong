@@ -75,10 +75,16 @@ class _DownloadWorker(QThread):
             self.done.emit("")
 
 
+# Este guia tem centenas de imagens; sem um teto, abrir a aba dispararia uma
+# QThread por imagem de uma só vez — o que trava a interface e martela o host.
+_MAX_PARALELO = 6
+
+
 class ImageLoader(QObject):
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._workers: list[_DownloadWorker] = []
+        self._fila: list[tuple[str, Path, Callable[[QPixmap], None]]] = []
 
     def load(self, url: str, on_ready: Callable[[QPixmap], None]) -> QPixmap | None:
         cache = _cache_path(url)
@@ -86,20 +92,28 @@ class ImageLoader(QObject):
             pixmap = QPixmap(str(cache))
             if not pixmap.isNull():
                 return pixmap
-        worker = _DownloadWorker(url, cache)
-
-        def _finish(path: str) -> None:
-            if worker in self._workers:
-                self._workers.remove(worker)
-            if path:
-                pixmap = QPixmap(path)
-                if not pixmap.isNull():
-                    on_ready(pixmap)
-
-        worker.done.connect(_finish)
-        self._workers.append(worker)
-        worker.start()
+        self._fila.append((url, cache, on_ready))
+        self._bombear()
         return None
+
+    def _bombear(self) -> None:
+        """Mantém no máximo _MAX_PARALELO downloads em andamento."""
+        while self._fila and len(self._workers) < _MAX_PARALELO:
+            url, cache, on_ready = self._fila.pop(0)
+            worker = _DownloadWorker(url, cache)
+
+            def _finish(path: str, worker=worker, on_ready=on_ready) -> None:
+                if worker in self._workers:
+                    self._workers.remove(worker)
+                if path:
+                    pixmap = QPixmap(path)
+                    if not pixmap.isNull():
+                        on_ready(pixmap)
+                self._bombear()
+
+            worker.done.connect(_finish)
+            self._workers.append(worker)
+            worker.start()
 
     def shutdown(self) -> None:
         """Encerra os downloads pendentes antes que o objeto seja destruído.
@@ -108,6 +122,7 @@ class ImageLoader(QObject):
         com um download em andamento destrói um QThread ainda rodando e o Qt
         aborta o processo ("QThread: Destroyed while thread is still running").
         """
+        self._fila.clear()
         for worker in list(self._workers):
             try:
                 worker.done.disconnect()

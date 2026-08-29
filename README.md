@@ -11,13 +11,15 @@ o que você faz **dentro de cada batalha**, na primeira vez que a joga.
 | Conteúdo | Qtd. |
 |---|---:|
 | Batalhas (16 principais + 30 secundárias) | 46 |
+| **Bandeiras com foto** (Batalha + Marcação), em 29 batalhas | 265 |
 | Coletáveis **com foto** e descrição de onde estão | 75 |
 | Troféus do jogo base | 51 |
 | Passos de fecho (depois da história) | 8 |
 | Companheiros recrutáveis | 17 |
 | Fases de feitiço (14 feitiços cada) | 5 |
 | Hábitos de preparo | 5 |
-| **Itens marcáveis no total** | **254** |
+| Imagens no total (bandeiras, coletáveis e ícones) | 389 |
+| **Itens marcáveis no total** | **490** |
 
 ## A regra que o guia inteiro persegue
 
@@ -26,7 +28,7 @@ o que você faz **dentro de cada batalha**, na primeira vez que a joga.
 
 Bandeira de Marcação sobe a **Fortitude**, que é o **piso do seu Rank de Moral**
 naquela batalha. Quem ergue tudo entra na missão seguinte mais forte; quem ignora
-apanha no meio do jogo **e** ainda termina com 145 bandeiras para refazer.
+apanha no meio do jogo **e** ainda termina com centenas de bandeiras para refazer.
 
 Seguindo essa regra, saem de graça, junto com a história: *Fly It High*,
 *Side by Side*, *Well-read*, *How Precious!*, *Ascension* e os 13 Juramentos.
@@ -41,8 +43,14 @@ Cada card de batalha tem:
 
 - a caixa de **batalha concluída** e o nível recomendado;
 - os **troféus que saem ali** (juramentos, easter eggs, o que for);
-- a caixa de **“todas as bandeiras desta batalha erguidas”**;
+- **cada bandeira daquela batalha** — Batalha ou Marcação, numerada, com descrição
+  e **foto**, e uma caixa por bandeira;
 - **cada coletável daquela missão**, com tipo, descrição de onde está e **foto**.
+
+As bandeiras vêm de guias publicados por missão, que cobrem **29 das 46 batalhas**.
+Nas 17 restantes (quase todas secundárias curtas) o card mantém uma caixa única de
+"todas as bandeiras erguidas" e avisa que ali não há guia publicado — o total por
+batalha aparece na tela de seleção de missão do próprio jogo.
 
 | # | Aba | O que tem |
 |---|-----|-----------|
@@ -149,6 +157,9 @@ esta platina.
 
 Guia não oficial, sem vínculo com a KOEI TECMO / Team NINJA.
 
-As **fotos dos 75 coletáveis** são do [PowerPyx](https://www.powerpyx.com/wo-long-fallen-dynasty-all-collectible-locations/),
-creditado na aba **Fontes**. Os ícones dos troféus vêm do CDN do Steam. Todas as
-imagens são carregadas sob demanda e ficam em cache local depois da primeira vez.
+As **fotos dos 75 coletáveis** são do [PowerPyx](https://www.powerpyx.com/wo-long-fallen-dynasty-all-collectible-locations/)
+e as **fotos das 265 bandeiras** são do [100% Guides](https://www.100pguides.com/guides/wo-long-all-flag-locations),
+ambos creditados na aba **Fontes**. Os ícones dos troféus vêm do CDN do Steam.
+
+As imagens são baixadas sob demanda, no máximo 6 por vez, e ficam em cache local —
+depois da primeira visita o guia funciona offline.
