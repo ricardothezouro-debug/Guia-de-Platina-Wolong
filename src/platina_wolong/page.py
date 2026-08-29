@@ -1,4 +1,4 @@
-"""Página do guia: as 9 abas, com progresso, busca global e imagens."""
+"""Página do guia: 4 abas, com a batalha como unidade central."""
 from __future__ import annotations
 
 import html
@@ -20,23 +20,16 @@ from . import progress as keys
 from .image_loader import ImageLoader
 from .storage import load_progress, save_progress
 
-_IMG_MAX_W = 620
-_IMG_MAX_H = 420
-_ICON = 56
+_PHOTO_W = 560
+_PHOTO_H = 316
+_ICON = 44
 _IMG_TIMEOUT_MS = 26000
 _SEARCH_LIMIT = 18
 
 _TIER_COLORS = {
-    "bronze": "#C77B3B",
-    "prata": "#B8C0CC",
-    "ouro": "#E7C64A",
-    "platina": "#7FE7FF",
+    "bronze": "#C77B3B", "prata": "#B8C0CC", "ouro": "#E7C64A", "platina": "#7FE7FF",
 }
-_KIND_COLORS = {
-    "Tábua": "#E7C64A",
-    "Shitieshou": "#B9FF43",
-    "Casca": "#37F2FF",
-}
+_KIND_COLORS = {"Tábua": "#E7C64A", "Shitieshou": "#B9FF43", "Casca": "#37F2FF"}
 
 _PROGRESS_QSS = (
     "QProgressBar{background:#0B111A;border:1px solid #273140;border-radius:9px;"
@@ -44,24 +37,25 @@ _PROGRESS_QSS = (
     "QProgressBar::chunk{border-radius:8px;background:qlineargradient(x1:0,y1:0,x2:1,y2:0,"
     "stop:0 #37F2FF,stop:0.5 #B9FF43,stop:1 #FF4FD8)}"
 )
-
 _NAV_QSS = (
     "QPushButton#NavButton{background:#0D121B;border:1px solid #273140;border-radius:8px;"
     "padding:7px 10px;color:#A8B0BC;text-align:left}"
     "QPushButton#NavButton:hover{border-color:#3C4A5C;color:#F3F6FF}"
-    "QPushButton#NavButton:checked{background:#101922;border-color:%s;color:#F3F6FF;font-weight:600}"
-    % guide_data.ACCENT
+    "QPushButton#NavButton:checked{background:#101922;border-color:%s;color:#F3F6FF;"
+    "font-weight:600}" % guide_data.ACCENT
 )
-
 _PHASE_QSS = (
     "QPushButton#PhaseHead{background:#101922;border:1px solid #273140;border-radius:9px;"
     "padding:10px 12px;color:#F3F6FF;text-align:left;font-weight:600}"
     "QPushButton#PhaseHead:hover{border-color:%s}" % guide_data.ACCENT
 )
+# o bloco de um coletável dentro do card da batalha
+_ITEM_QSS = (
+    "QFrame#ItemBlock{background:#0B111A;border:1px solid #1E2733;border-radius:8px}"
+)
 
 
 def _norm(text) -> str:
-    """Minúsculas sem acento, para busca tolerante."""
     stripped = unicodedata.normalize("NFD", str(text or ""))
     return "".join(c for c in stripped if not unicodedata.combining(c)).lower()
 
@@ -71,7 +65,6 @@ def _esc(text) -> str:
 
 
 def _flat(value) -> str:
-    """Junta dict/list/str num texto único, para alimentar a busca."""
     if isinstance(value, str):
         return value
     if isinstance(value, dict):
@@ -91,9 +84,7 @@ def _label(text: str, object_name: str = "", wrap: bool = True) -> QLabel:
 
 
 def _link(text: str, url: str) -> QLabel:
-    label = QLabel(
-        f'<a href="{_esc(url)}" style="color:{guide_data.ACCENT}">{_esc(text)}</a>'
-    )
+    label = QLabel(f'<a href="{_esc(url)}" style="color:{guide_data.ACCENT}">{_esc(text)}</a>')
     label.setOpenExternalLinks(True)
     label.setWordWrap(True)
     return label
@@ -114,8 +105,7 @@ def _notice(text: str, tone: str = "info") -> QFrame:
     color = "#F87171" if tone == "red" else guide_data.ACCENT
     frame.setStyleSheet(
         "QFrame{background:#0D121B;border:1px solid #273140;"
-        "border-left:3px solid %s;border-radius:10px}" % color
-    )
+        "border-left:3px solid %s;border-radius:10px}" % color)
     layout = QVBoxLayout(frame)
     layout.setContentsMargins(14, 11, 14, 11)
     layout.addWidget(_label(text, "Muted"))
@@ -170,10 +160,10 @@ class GuidePage(QWidget):
         self._image_loader = ImageLoader(self)
         self._boxes: dict[str, list[QCheckBox]] = {}
         self._built: set[int] = set()
-        self._phase_pills: list[tuple[QLabel, list[str]]] = []
+        self._part_pills: list[tuple[QLabel, list[str]]] = []
+        self._mission_rows: list[tuple[QWidget, str, str, int]] = []
+        self._part_groups: list[tuple[QWidget, QWidget, list[int]]] = []
         self._trophy_rows: list[tuple[QWidget, str, str]] = []
-        self._item_rows: list[tuple[QWidget, str, str, str, int]] = []
-        self._flag_rows: list[tuple[QWidget, str, int]] = []
         self._section_index = {s["key"]: i for i, s in enumerate(guide_data.SECTIONS)}
 
         outer = QVBoxLayout(self)
@@ -197,7 +187,6 @@ class GuidePage(QWidget):
             self.stack.addWidget(placeholder)
         self.stack.currentChanged.connect(self._ensure_built)
         outer.addWidget(self.stack, 1)
-
         outer.addWidget(_label(guide_data.FOOTER, "Muted"))
 
         self._update_progress()
@@ -236,8 +225,7 @@ class GuidePage(QWidget):
         row.setSpacing(8)
         self.global_search = QLineEdit()
         self.global_search.setPlaceholderText(
-            "Buscar... Ex.: Lu Bu, tábua, Shitieshou, Guandu, feitiço, bandeira, Cao Cao"
-        )
+            "Buscar batalha, troféu ou coletável... Ex.: Guandu, tábua, Lu Bu, Shitieshou")
         self.global_search.textChanged.connect(self._global_search)
         clear = QPushButton("Limpar")
         clear.clicked.connect(lambda: self.global_search.setText(""))
@@ -270,13 +258,11 @@ class GuidePage(QWidget):
     def _build_toolbar(self, outer: QVBoxLayout) -> None:
         row = QHBoxLayout()
         row.setSpacing(8)
-        export = QPushButton("Exportar progresso")
-        export.clicked.connect(self._export)
-        importer = QPushButton("Importar progresso")
-        importer.clicked.connect(self._import)
-        reset = QPushButton("Resetar marcações")
-        reset.clicked.connect(self._reset)
-        for button in (export, importer, reset):
+        for text, slot in (("Exportar progresso", self._export),
+                           ("Importar progresso", self._import),
+                           ("Resetar marcações", self._reset)):
+            button = QPushButton(text)
+            button.clicked.connect(slot)
             row.addWidget(button)
         row.addStretch(1)
         outer.addLayout(row)
@@ -294,10 +280,9 @@ class GuidePage(QWidget):
             button.setCheckable(True)
             button.setChecked(i == 0)
             button.clicked.connect(lambda _=False, index=i: self.show_section(index))
-            grid.addWidget(button, i // 5, i % 5)
+            grid.addWidget(button, 0, i)
             self._nav_buttons.append(button)
-        for column in range(5):
-            grid.setColumnStretch(column, 1)
+            grid.setColumnStretch(i, 1)
         outer.addWidget(holder)
 
     def show_section(self, index: int) -> None:
@@ -333,14 +318,14 @@ class GuidePage(QWidget):
         self.progress.setValue(done)
         self.progress_label.setText(f"{done} / {len(all_keys)}  •  {percent}%")
         trophies = keys.trophy_keys()
-        got = sum(1 for key in trophies if key in self._done)
-        self.trophy_label.setText(f"{got}/{len(trophies)} troféus")
+        self.trophy_label.setText(
+            f"{sum(1 for k in trophies if k in self._done)}/{len(trophies)} troféus")
         items = keys.collectible_keys()
-        got_items = sum(1 for key in items if key in self._done)
-        self.item_label.setText(f"{got_items}/{len(items)} coletáveis")
-        for pill, phase_keys in self._phase_pills:
-            phase_done = sum(1 for key in phase_keys if key in self._done)
-            pill.setText(f"{phase_done}/{len(phase_keys)}")
+        self.item_label.setText(
+            f"{sum(1 for k in items if k in self._done)}/{len(items)} coletáveis")
+        for pill, part_keys in self._part_pills:
+            part_done = sum(1 for key in part_keys if key in self._done)
+            pill.setText(f"{part_done}/{len(part_keys)}")
 
     def _refresh_boxes(self) -> None:
         for key, boxes in self._boxes.items():
@@ -352,35 +337,28 @@ class GuidePage(QWidget):
         self._update_progress()
         if self._trophy_rows:
             self._filter_trophies()
-        if self._item_rows:
-            self._filter_items()
-        if self._flag_rows:
-            self._filter_flags()
+        if self._mission_rows:
+            self._filter_missions()
 
     # ------------------------------------------------------ exportar/importar
     def _export(self) -> None:
         path, _ = QFileDialog.getSaveFileName(
-            self, "Exportar progresso", "wolong-platina-progresso.json", "JSON (*.json)",
-        )
+            self, "Exportar progresso", "wolong-platina-progresso.json", "JSON (*.json)")
         if not path:
             return
         payload = {
-            "guide": guide_data.GUIDE_ID,
-            "version": 1,
+            "guide": guide_data.GUIDE_ID, "version": 2,
             "exportedAt": datetime.now(timezone.utc).isoformat(),
             "state": {key: True for key in sorted(self._done)},
         }
         try:
-            Path(path).write_text(
-                json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
-            )
+            Path(path).write_text(json.dumps(payload, ensure_ascii=False, indent=2),
+                                  encoding="utf-8")
         except OSError as error:
             QMessageBox.warning(self, "Exportar", f"Não foi possível salvar: {error}")
 
     def _import(self) -> None:
-        path, _ = QFileDialog.getOpenFileName(
-            self, "Importar progresso", "", "JSON (*.json)"
-        )
+        path, _ = QFileDialog.getOpenFileName(self, "Importar progresso", "", "JSON (*.json)")
         if not path:
             return
         try:
@@ -394,10 +372,9 @@ class GuidePage(QWidget):
         self._refresh_boxes()
 
     def _reset(self) -> None:
-        answer = QMessageBox.question(
-            self, "Resetar", "Apagar todas as marcações deste guia?"
-        )
-        if answer != QMessageBox.StandardButton.Yes:
+        if QMessageBox.question(self, "Resetar",
+                                "Apagar todas as marcações deste guia?") != \
+                QMessageBox.StandardButton.Yes:
             return
         self._done = set()
         save_progress(self._done)
@@ -416,28 +393,23 @@ class GuidePage(QWidget):
             return
 
         hits: list[tuple[str, str, str, str, str]] = []
-        for step in guide_data.ROUTE:
-            if query in _norm(_flat(step)):
-                hits.append((f"PASSO {step['num']}", step["title"], step["place"],
-                             step["exact"], "route"))
-        for trophy in guide_data.TROPHIES:
-            if query in _norm(_flat(trophy)):
-                hits.append(("TROFÉU", trophy["name"], trophy["tier"].upper(),
-                             f"{trophy['requirement']} {trophy['shortcut']}", "trophies"))
-        for item in guide_data.COLLECTIBLES:
-            if query in _norm(_flat(item)):
-                hits.append((item["kind"].upper(), item["name"], item["mission"],
-                             item["where"], "collectibles"))
         for mission in guide_data.MISSIONS:
             if query in _norm(_flat(mission)):
                 hits.append(("BATALHA", mission["name"],
                              f"{mission['kind']} · nível {mission['level']}",
-                             mission["note"] or mission["part"], "flags"))
+                             mission["note"] or mission["part"], "battles"))
+        for item in guide_data.COLLECTIBLES:
+            if query in _norm(_flat(item)):
+                hits.append((item["kind"].upper(), item["name"], item["mission"],
+                             item["where"], "battles"))
+        for trophy in guide_data.TROPHIES:
+            if query in _norm(_flat(trophy)):
+                hits.append(("TROFÉU", trophy["name"], trophy["tier"].upper(),
+                             f"{trophy['requirement']} {trophy['shortcut']}", "trophies"))
 
         if not hits:
             self.results_layout.addWidget(
-                _notice("Nada encontrado. Tente o nome de uma batalha, troféu ou coletável.")
-            )
+                _notice("Nada encontrado. Tente o nome de uma batalha, troféu ou coletável."))
             self.results_box.show()
             return
 
@@ -452,11 +424,9 @@ class GuidePage(QWidget):
             layout.addLayout(head)
             layout.addWidget(_label(text, "Muted"))
             go = QPushButton(
-                f"Ir para “{guide_data.SECTIONS[self._section_index[page]]['nav']}”"
-            )
+                f"Ir para “{guide_data.SECTIONS[self._section_index[page]]['nav']}”")
             go.clicked.connect(
-                lambda _=False, target=page: self.show_section(self._section_index[target])
-            )
+                lambda _=False, target=page: self.show_section(self._section_index[target]))
             row = QHBoxLayout()
             row.addWidget(go)
             row.addStretch(1)
@@ -465,16 +435,15 @@ class GuidePage(QWidget):
         if len(hits) > _SEARCH_LIMIT:
             self.results_layout.addWidget(
                 _label(f"…e mais {len(hits) - _SEARCH_LIMIT} resultado(s). Refine a busca.",
-                       "Muted")
-            )
+                       "Muted"))
         self.results_box.show()
 
     # ---------------------------------------------------------------- imagens
-    def _add_image(self, layout, url: str, max_w: int = _IMG_MAX_W,
-                   max_h: int = _IMG_MAX_H) -> None:
+    def _add_image(self, layout, url: str, max_w: int = _PHOTO_W,
+                   max_h: int = _PHOTO_H) -> None:
         if not url:
             return
-        holder = QLabel("Carregando imagem…")
+        holder = QLabel("Carregando foto…")
         holder.setObjectName("Muted")
         layout.addWidget(holder)
         state = {"loaded": False}
@@ -483,8 +452,7 @@ class GuidePage(QWidget):
             state["loaded"] = True
             holder.setText("")
             holder.setPixmap(pixmap.scaled(
-                max_w, max_h,
-                Qt.AspectRatioMode.KeepAspectRatio,
+                max_w, max_h, Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation))
 
         cached = self._image_loader.load(url, show)
@@ -495,7 +463,7 @@ class GuidePage(QWidget):
         def timeout() -> None:
             if not state["loaded"]:
                 holder.setText(
-                    f'Imagem indisponível offline — <a href="{_esc(url)}" '
+                    f'Foto indisponível offline — <a href="{_esc(url)}" '
                     f'style="color:{guide_data.ACCENT}">abrir no navegador</a>')
                 holder.setOpenExternalLinks(True)
 
@@ -514,11 +482,8 @@ class GuidePage(QWidget):
             widget = item.widget()
             if widget is not None:
                 widget.setParent(None)
-        key = guide_data.SECTIONS[index]["key"]
-        builder = getattr(self, f"_build_{key}")
-        holder.addWidget(
-            _scroll_page(lambda layout: self._with_header(layout, index, builder))
-        )
+        builder = getattr(self, f"_build_{guide_data.SECTIONS[index]['key']}")
+        holder.addWidget(_scroll_page(lambda layout: self._with_header(layout, index, builder)))
         self._update_progress()
 
     def _with_header(self, layout: QVBoxLayout, index: int, builder) -> None:
@@ -530,122 +495,184 @@ class GuidePage(QWidget):
             layout.addWidget(_notice(notice["text"], notice["tone"]))
         builder(layout)
 
-    # ------------------------------------------------------- 01 Passo a passo
-    def _build_route(self, layout: QVBoxLayout) -> None:
-        phases: dict[str, list[dict]] = {}
-        for step in guide_data.ROUTE:
-            phases.setdefault(step["phase"], []).append(step)
+    # ═══════════════════════════════════════════════════════ 01 Batalhas
+    def _build_battles(self, layout: QVBoxLayout) -> None:
+        filters = QHBoxLayout()
+        filters.setSpacing(8)
+        self.mission_search = QLineEdit()
+        self.mission_search.setPlaceholderText("Buscar batalha ou coletável dela...")
+        self.mission_search.textChanged.connect(self._filter_missions)
+        self.mission_part = QComboBox()
+        self.mission_part.addItem("Todas as partes", "")
+        for part in dict.fromkeys(m["part"] for m in guide_data.MISSIONS):
+            self.mission_part.addItem(part, part)
+        self.mission_part.currentIndexChanged.connect(self._filter_missions)
+        self.mission_pending = QCheckBox("só pendentes")
+        self.mission_pending.toggled.connect(self._filter_missions)
+        filters.addWidget(self.mission_search, 1)
+        filters.addWidget(self.mission_part, 0)
+        filters.addWidget(self.mission_pending, 0)
+        layout.addLayout(filters)
 
-        for phase, steps in phases.items():
-            phase_keys = [keys.step_key(step["num"]) for step in steps]
+        self.mission_empty = _label("Nenhuma batalha corresponde ao filtro.", "Muted")
+        self.mission_empty.hide()
+        layout.addWidget(self.mission_empty)
+
+        parts: dict[str, list[tuple[int, dict]]] = {}
+        for i, mission in enumerate(guide_data.MISSIONS):
+            parts.setdefault(mission["part"], []).append((i, mission))
+
+        for part, entries in parts.items():
+            part_keys = [keys.mission_key(i) for i, _ in entries]
             head_holder = QWidget()
             head_holder.setStyleSheet(_PHASE_QSS)
             head_row = QHBoxLayout(head_holder)
             head_row.setContentsMargins(0, 0, 0, 0)
             head_row.setSpacing(8)
-            toggle = QPushButton(f"{phase}   ({len(steps)} passos)")
+            plural = "batalha" if len(entries) == 1 else "batalhas"
+            toggle = QPushButton(f"Parte {part}   ({len(entries)} {plural})")
             toggle.setObjectName("PhaseHead")
             pill = _pill("")
             head_row.addWidget(toggle, 1)
             head_row.addWidget(pill, 0)
             layout.addWidget(head_holder)
-            self._phase_pills.append((pill, phase_keys))
+            self._part_pills.append((pill, part_keys))
 
             body = QWidget()
             body_layout = QVBoxLayout(body)
             body_layout.setContentsMargins(0, 0, 0, 0)
             body_layout.setSpacing(8)
-            for step in steps:
-                body_layout.addWidget(self._route_step(step))
+            for i, mission in entries:
+                card = self._mission_card(i, mission)
+                body_layout.addWidget(card)
+                haystack = _norm(_flat(mission) + " " + " ".join(
+                    _flat(c) for _, c in keys.collectibles_of(mission["name"])))
+                self._mission_rows.append((card, haystack, mission["part"], i))
             layout.addWidget(body)
+            self._part_groups.append((head_holder, body, [i for i, _ in entries]))
             toggle.clicked.connect(
-                lambda _=False, target=body: target.setVisible(not target.isVisible())
-            )
+                lambda _=False, target=body: (
+                    target.setProperty("collapsed", target.isVisible()),
+                    target.setVisible(not target.isVisible())))
 
-    def _route_step(self, step: dict) -> QFrame:
-        frame, layout = _card()
+        # a base e o fecho fecham a aba
+        layout.addWidget(self._hub_card())
+        layout.addWidget(_label("Fecho — depois da história", "CardTitle"))
+        layout.addWidget(_label(
+            "O que sobra quando a campanha acaba. Se você seguiu a rotina de cada batalha, "
+            "aqui é rápido.", "Muted"))
+        for i, step in enumerate(guide_data.CLOSE):
+            layout.addWidget(self._close_card(i, step))
+
+    def _mission_card(self, index: int, mission: dict) -> QFrame:
+        frame, card = _card()
         head = QHBoxLayout()
         head.setSpacing(8)
-        head.addWidget(self._checkbox(keys.step_key(step["num"])), 0,
+        head.addWidget(self._checkbox(keys.mission_key(index)), 0, Qt.AlignmentFlag.AlignTop)
+        principal = mission["kind"] == "principal"
+        head.addWidget(_tag(mission["kind"], "#E7C64A" if principal else "#A8B0BC"), 0,
                        Qt.AlignmentFlag.AlignTop)
-        head.addWidget(_label(step["num"], "Kicker", wrap=False), 0,
-                       Qt.AlignmentFlag.AlignTop)
-        head.addWidget(_label(step["title"], "SectionTitle"), 1)
-        head.addWidget(_pill(step["place"]), 0, Qt.AlignmentFlag.AlignTop)
-        layout.addLayout(head)
-        _detail(layout, "Quando", step["when"])
-        _detail(layout, "Faça exatamente", step["exact"])
-        _detail(layout, "Por que agora", step["why"])
-        image = step.get("image", "")
-        if image:
-            small = "community_assets" in image  # ícone de conquista
-            self._add_image(layout, image, _ICON if small else _IMG_MAX_W,
-                            _ICON if small else _IMG_MAX_H)
+        title = ("★ " if principal else "") + mission["name"]
+        head.addWidget(_label(title, "SectionTitle"), 1)
+        head.addWidget(_pill(f"nível {mission['level']}"), 0, Qt.AlignmentFlag.AlignTop)
+        card.addLayout(head)
+
+        if mission["note"]:
+            card.addWidget(_notice(mission["note"],
+                                   "red" if principal or "não pule" in mission["note"].lower()
+                                   else "info"))
+        if mission["trophies"]:
+            _detail(card, "Troféus aqui", ", ".join(mission["trophies"]))
+
+        card.addWidget(self._checkbox(
+            keys.flag_key(index), "Todas as bandeiras desta batalha erguidas"))
+
+        found = keys.collectibles_of(mission["name"])
+        if found:
+            card.addWidget(_label(f"<b>Coletáveis ({len(found)}):</b>", "Muted"))
+            for item_index, item in found:
+                card.addWidget(self._item_block(item_index, item))
         return frame
 
-    # -------------------------------------------------------- 02 Coletáveis
-    def _build_collectibles(self, layout: QVBoxLayout) -> None:
-        filters = QHBoxLayout()
-        filters.setSpacing(8)
-        self.item_search = QLineEdit()
-        self.item_search.setPlaceholderText("Buscar item, missão ou local...")
-        self.item_search.textChanged.connect(self._filter_items)
-        self.item_kind = QComboBox()
-        self.item_kind.addItem("Todos os tipos", "")
-        for kind in ("Tábua", "Shitieshou", "Casca"):
-            self.item_kind.addItem(kind, kind)
-        self.item_kind.currentIndexChanged.connect(self._filter_items)
-        self.item_mission = QComboBox()
-        self.item_mission.addItem("Todas as batalhas", "")
-        for mission in dict.fromkeys(c["mission"] for c in guide_data.COLLECTIBLES):
-            self.item_mission.addItem(mission, mission)
-        self.item_mission.currentIndexChanged.connect(self._filter_items)
-        self.item_pending = QCheckBox("só pendentes")
-        self.item_pending.toggled.connect(self._filter_items)
-        filters.addWidget(self.item_search, 1)
-        filters.addWidget(self.item_kind, 0)
-        filters.addWidget(self.item_pending, 0)
-        layout.addLayout(filters)
-        layout.addWidget(self.item_mission)
+    def _item_block(self, index: int, item: dict) -> QFrame:
+        frame = QFrame()
+        frame.setObjectName("ItemBlock")
+        frame.setStyleSheet(_ITEM_QSS)
+        box = QVBoxLayout(frame)
+        box.setContentsMargins(11, 9, 11, 9)
+        box.setSpacing(5)
+        head = QHBoxLayout()
+        head.setSpacing(8)
+        head.addWidget(self._checkbox(keys.collectible_key(index)), 0,
+                       Qt.AlignmentFlag.AlignTop)
+        head.addWidget(_tag(item["kind"], _KIND_COLORS.get(item["kind"], "#A8B0BC")), 0,
+                       Qt.AlignmentFlag.AlignTop)
+        name = item["name"] if item["name"] != item["kind"] else ""
+        head.addWidget(_label(name or item["kind"], "SectionTitle"), 1)
+        box.addLayout(head)
+        box.addWidget(_label(item["where"], "Muted"))
+        self._add_image(box, item["image"])
+        return frame
 
-        self.item_empty = _label("Nenhum coletável corresponde ao filtro.", "Muted")
-        self.item_empty.hide()
-        layout.addWidget(self.item_empty)
+    def _hub_card(self) -> QFrame:
+        hub = guide_data.HUB_ENTRY
+        frame, card = _card()
+        head = QHBoxLayout()
+        head.setSpacing(8)
+        head.addWidget(self._checkbox(keys.HUB_KEY), 0, Qt.AlignmentFlag.AlignTop)
+        head.addWidget(_tag("base", "#7FE7FF"), 0, Qt.AlignmentFlag.AlignTop)
+        head.addWidget(_label(hub["name"], "SectionTitle"), 1)
+        card.addLayout(head)
+        card.addWidget(_label(hub["note"], "Muted"))
+        found = keys.collectibles_of(hub["name"])
+        if found:
+            card.addWidget(_label(f"<b>Coletáveis ({len(found)}):</b>", "Muted"))
+            for item_index, item in found:
+                card.addWidget(self._item_block(item_index, item))
+        return frame
 
-        for i, item in enumerate(guide_data.COLLECTIBLES):
-            frame, card = _card()
-            head = QHBoxLayout()
-            head.setSpacing(8)
-            head.addWidget(self._checkbox(keys.collectible_key(i)), 0,
-                           Qt.AlignmentFlag.AlignTop)
-            head.addWidget(_tag(item["kind"], _KIND_COLORS.get(item["kind"], "#A8B0BC")),
-                           0, Qt.AlignmentFlag.AlignTop)
-            head.addWidget(_label(item["name"], "SectionTitle"), 1)
-            card.addLayout(head)
-            _detail(card, "Batalha", item["mission"])
-            _detail(card, "Onde", item["where"])
-            layout.addWidget(frame)
-            self._item_rows.append(
-                (frame, _norm(_flat(item)), item["kind"], item["mission"], i)
-            )
+    def _close_card(self, index: int, step: dict) -> QFrame:
+        frame, card = _card()
+        head = QHBoxLayout()
+        head.setSpacing(10)
+        head.addWidget(self._checkbox(keys.close_key(index)), 0, Qt.AlignmentFlag.AlignTop)
+        icon_url = ""
+        for trophy in guide_data.TROPHIES:
+            if trophy["name"].lower() == step["icon"].lower():
+                icon_url = trophy["image"]
+                break
+        if icon_url:
+            icon = QVBoxLayout()
+            self._add_image(icon, icon_url, _ICON, _ICON)
+            icon.addStretch(1)
+            head.addLayout(icon, 0)
+        head.addWidget(_label(step["name"], "SectionTitle"), 1)
+        head.addWidget(_pill(step["where"]), 0, Qt.AlignmentFlag.AlignTop)
+        card.addLayout(head)
+        _detail(card, "Por quê", step["why"])
+        return frame
 
-    def _filter_items(self) -> None:
-        query = _norm(self.item_search.text()).strip()
-        kind = self.item_kind.currentData() or ""
-        mission = self.item_mission.currentData() or ""
-        pending = self.item_pending.isChecked()
+    def _filter_missions(self) -> None:
+        query = _norm(self.mission_search.text()).strip()
+        part = self.mission_part.currentData() or ""
+        pending = self.mission_pending.isChecked()
         visible = 0
-        for frame, haystack, row_kind, row_mission, index in self._item_rows:
-            got = keys.collectible_key(index) in self._done
-            show = (query in haystack
-                    and (not kind or row_kind == kind)
-                    and (not mission or row_mission == mission)
-                    and (not pending or not got))
+        self._mission_visible: dict[int, bool] = {}
+        for frame, haystack, row_part, index in self._mission_rows:
+            done = keys.mission_key(index) in self._done
+            show = (query in haystack and (not part or row_part == part)
+                    and (not pending or not done))
             frame.setVisible(show)
+            self._mission_visible[index] = show
             visible += int(show)
-        self.item_empty.setVisible(visible == 0)
+        # esconde a Parte inteira quando nenhuma batalha dela sobrou no filtro
+        for head, body, indices in self._part_groups:
+            any_visible = any(self._mission_visible.get(i) for i in indices)
+            head.setVisible(any_visible)
+            body.setVisible(any_visible and not body.property("collapsed"))
+        self.mission_empty.setVisible(visible == 0)
 
-    # ---------------------------------------------------------- 03 Troféus
+    # ═══════════════════════════════════════════════════════ 02 Troféus
     def _build_trophies(self, layout: QVBoxLayout) -> None:
         filters = QHBoxLayout()
         filters.setSpacing(8)
@@ -696,95 +723,15 @@ class GuidePage(QWidget):
         for (frame, haystack, trophy_id), trophy in zip(self._trophy_rows,
                                                         guide_data.TROPHIES):
             got = keys.trophy_key(trophy_id) in self._done
-            show = (query in haystack
-                    and (not tier or trophy["tier"] == tier)
+            show = (query in haystack and (not tier or trophy["tier"] == tier)
                     and (not pending or not got))
             frame.setVisible(show)
             visible += int(show)
         self.trophy_empty.setVisible(visible == 0)
 
-    # --------------------------------------------------------- 04 Bandeiras
-    def _build_flags(self, layout: QVBoxLayout) -> None:
-        filters = QHBoxLayout()
-        filters.setSpacing(8)
-        self.flag_search = QLineEdit()
-        self.flag_search.setPlaceholderText("Buscar batalha...")
-        self.flag_search.textChanged.connect(self._filter_flags)
-        self.flag_pending = QCheckBox("só pendentes")
-        self.flag_pending.toggled.connect(self._filter_flags)
-        filters.addWidget(self.flag_search, 1)
-        filters.addWidget(self.flag_pending, 0)
-        layout.addLayout(filters)
-
-        self.flag_empty = _label("Nenhuma batalha corresponde ao filtro.", "Muted")
-        self.flag_empty.hide()
-        layout.addWidget(self.flag_empty)
-
-        for i, mission in enumerate(guide_data.MISSIONS):
-            frame, card = _card()
-            head = QHBoxLayout()
-            head.setSpacing(8)
-            head.addWidget(self._checkbox(keys.flag_key(i)), 0, Qt.AlignmentFlag.AlignTop)
-            head.addWidget(_tag(mission["kind"],
-                                "#E7C64A" if mission["kind"] == "principal" else "#A8B0BC"),
-                           0, Qt.AlignmentFlag.AlignTop)
-            head.addWidget(_label(mission["name"], "SectionTitle"), 1)
-            head.addWidget(_pill(f"nível {mission['level']}"), 0, Qt.AlignmentFlag.AlignTop)
-            card.addLayout(head)
-            _detail(card, "Parte", mission["part"])
-            layout.addWidget(frame)
-            self._flag_rows.append((frame, _norm(_flat(mission)), i))
-
-    def _filter_flags(self) -> None:
-        query = _norm(self.flag_search.text()).strip()
-        pending = self.flag_pending.isChecked()
-        visible = 0
-        for frame, haystack, index in self._flag_rows:
-            got = keys.flag_key(index) in self._done
-            show = query in haystack and (not pending or not got)
-            frame.setVisible(show)
-            visible += int(show)
-        self.flag_empty.setVisible(visible == 0)
-
-    # ------------------------------------------------------ 05 Companheiros
-    def _build_companions(self, layout: QVBoxLayout) -> None:
-        layout.addWidget(_notice(
-            "Método rápido do Great Gatherings: depois de terminar a história, vá à "
-            "bandeira da Vila Oculta, escolha a missão tutorial (The Village of Calamity) "
-            "na dificuldade Dragão Ascendente, chame um companheiro, comece e saia. "
-            "Não precisa terminar a missão — basta ter chamado. Repita com os 17."))
-        total = len(guide_data.COMPANIONS)
-        for i, ally in enumerate(guide_data.COMPANIONS):
-            frame, card = _card()
-            head = QHBoxLayout()
-            head.setSpacing(8)
-            head.addWidget(self._checkbox(keys.companion_key(i)), 0,
-                           Qt.AlignmentFlag.AlignTop)
-            head.addWidget(_label(f"{i + 1}/{total}", "Kicker", wrap=False), 0)
-            head.addWidget(_label(ally["name"], "SectionTitle"), 1)
-            card.addLayout(head)
-            _detail(card, "Fica disponível em", ally["when"])
-            layout.addWidget(frame)
-
-    # ---------------------------------------------------------- 06 Feitiços
-    def _build_spells(self, layout: QVBoxLayout) -> None:
-        layout.addWidget(_notice(
-            "Onde aprender: em qualquer bandeira, Feitiços → Aprender. Os Pontos de "
-            "Feitiço vêm de subir de nível, e por volta do nível 80 você tem pontos "
-            "para os 70."))
-        for i, phase in enumerate(guide_data.PHASES):
-            frame, card = _card()
-            head = QHBoxLayout()
-            head.setSpacing(8)
-            head.addWidget(self._checkbox(keys.phase_key(i)), 0, Qt.AlignmentFlag.AlignTop)
-            head.addWidget(_label(phase["name"], "SectionTitle"), 1)
-            head.addWidget(_pill(phase["spells"]), 0, Qt.AlignmentFlag.AlignTop)
-            card.addLayout(head)
-            _detail(card, "Papel", phase["note"])
-            layout.addWidget(frame)
-
-    # ------------------------------------------------------------ 07 Preparo
-    def _build_prep(self, layout: QVBoxLayout) -> None:
+    # ═══════════════════════════════════════════════════════ 03 Sistemas
+    def _build_systems(self, layout: QVBoxLayout) -> None:
+        layout.addWidget(_label("Hábitos que decidem a run", "CardTitle"))
         for i, item in enumerate(guide_data.PREP):
             frame, card = _card()
             head = QHBoxLayout()
@@ -796,17 +743,40 @@ class GuidePage(QWidget):
             _detail(card, "Por quê", item["why"])
             layout.addWidget(frame)
 
-    # ------------------------------------------------------------ 08 Imagens
-    def _build_visuals(self, layout: QVBoxLayout) -> None:
-        for visual in guide_data.VISUALS:
+        layout.addWidget(_label("As Cinco Fases — 70 feitiços", "CardTitle"))
+        layout.addWidget(_notice(
+            "Em qualquer bandeira: Feitiços → Aprender. Os Pontos de Feitiço vêm de subir de "
+            "nível; por volta do 80 você tem para os 70. Marque a fase quando comprar os 14 "
+            "dela. Sem a batalha Wizardry Spell Mastery, os tiers altos nem aparecem."))
+        for i, phase in enumerate(guide_data.PHASES):
             frame, card = _card()
-            card.addWidget(_label(visual["title"], "SectionTitle"))
-            card.addWidget(_label(visual["caption"], "Muted"))
-            self._add_image(card, visual["image"])
-            card.addWidget(_label(f"Fonte da imagem: {visual['source']}", "Muted"))
+            head = QHBoxLayout()
+            head.setSpacing(8)
+            head.addWidget(self._checkbox(keys.phase_key(i)), 0, Qt.AlignmentFlag.AlignTop)
+            head.addWidget(_label(phase["name"], "SectionTitle"), 1)
+            head.addWidget(_pill(phase["spells"]), 0, Qt.AlignmentFlag.AlignTop)
+            card.addLayout(head)
+            _detail(card, "Papel", phase["note"])
             layout.addWidget(frame)
 
-    # ------------------------------------------------------------ 09 Fontes
+        layout.addWidget(_label("Os 17 companheiros", "CardTitle"))
+        layout.addWidget(_notice(
+            "Great Gatherings: basta CHAMAR cada um uma vez. Depois da história, use a "
+            "missão tutorial na dificuldade Dragão Ascendente — chame, comece e saia."))
+        total = len(guide_data.COMPANIONS)
+        for i, ally in enumerate(guide_data.COMPANIONS):
+            frame, card = _card()
+            head = QHBoxLayout()
+            head.setSpacing(8)
+            head.addWidget(self._checkbox(keys.companion_key(i)), 0,
+                           Qt.AlignmentFlag.AlignTop)
+            head.addWidget(_label(f"{i + 1}/{total}", "Kicker", wrap=False), 0)
+            head.addWidget(_label(ally["name"], "SectionTitle"), 1)
+            head.addWidget(_pill(ally["when"]), 0, Qt.AlignmentFlag.AlignTop)
+            card.addLayout(head)
+            layout.addWidget(frame)
+
+    # ═══════════════════════════════════════════════════════ 04 Fontes
     def _build_sources(self, layout: QVBoxLayout) -> None:
         for source in guide_data.SOURCES:
             frame, card = _card()

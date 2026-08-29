@@ -10,16 +10,14 @@ o que você faz **dentro de cada batalha**, na primeira vez que a joga.
 
 | Conteúdo | Qtd. |
 |---|---:|
-| Passos da rota (preparo + 46 batalhas + limpeza) | 57 |
 | Batalhas (16 principais + 30 secundárias) | 46 |
-| Coletáveis com missão e local | 75 |
+| Coletáveis **com foto** e descrição de onde estão | 75 |
 | Troféus do jogo base | 51 |
+| Passos de fecho (depois da história) | 8 |
 | Companheiros recrutáveis | 17 |
 | Fases de feitiço (14 feitiços cada) | 5 |
-| Itens de preparo / equipamento | 10 |
-| Imagens (ícones de troféu e capturas) | 58 |
-| Fontes cruzadas | 6 |
-| **Itens marcáveis no total** | **261** |
+| Hábitos de preparo | 5 |
+| **Itens marcáveis no total** | **254** |
 
 ## A regra que o guia inteiro persegue
 
@@ -33,19 +31,25 @@ apanha no meio do jogo **e** ainda termina com 145 bandeiras para refazer.
 Seguindo essa regra, saem de graça, junto com a história: *Fly It High*,
 *Side by Side*, *Well-read*, *How Precious!*, *Ascension* e os 13 Juramentos.
 
-## As 9 abas
+## Como o guia é organizado
+
+Em Wo Long **tudo acontece dentro de uma batalha** — então o guia não separa rota,
+coletáveis e bandeiras em abas diferentes. A batalha é a unidade: você abre a que
+vai jogar e o card dela traz tudo.
+
+Cada card de batalha tem:
+
+- a caixa de **batalha concluída** e o nível recomendado;
+- os **troféus que saem ali** (juramentos, easter eggs, o que for);
+- a caixa de **“todas as bandeiras desta batalha erguidas”**;
+- **cada coletável daquela missão**, com tipo, descrição de onde está e **foto**.
 
 | # | Aba | O que tem |
 |---|-----|-----------|
-| 01 | Passo a passo | As 46 batalhas na ordem, por Parte, cada uma já dizendo **o que recolher nela**. Mais 3 passos de preparo e 8 de limpeza final. |
-| 02 | Coletáveis | As 31 tábuas, 23 Shitieshou e 21 Cascas de Cigarra com missão e local. **Filtre pela batalha que vai jogar** e leve a lista do lado. |
-| 03 | 51 Troféus | Nome, tier, requisito e o caminho mais curto, com o ícone de cada um. Filtro por texto, tier e "só pendentes". |
-| 04 | 145 Bandeiras | Uma linha por batalha: marque quando ela estiver 100% de bandeira. |
-| 05 | Companheiros | Os 17 guerreiros, quando cada um libera, e o método rápido do *Great Gatherings*. |
-| 06 | Feitiços | As 5 fases (14 feitiços cada) e o pré-requisito que trava o *Wizardry Master*. |
-| 07 | Preparo | Ajustes de opção, hábitos por missão e os itens de equipamento que viram troféu. |
-| 08 | Imagens | As mecânicas que o guia cita, em imagem. |
-| 09 | Fontes | Os 6 guias cruzados na elaboração da rota. |
+| 01 | Batalhas | As 46 batalhas agrupadas por Parte, mais a Base e o Fecho. É a única aba necessária com o jogo aberto. Filtro por texto, Parte e "só pendentes". |
+| 02 | 51 Troféus | Nome, tier, requisito e caminho mais curto, com o ícone oficial de cada um. |
+| 03 | Sistemas | O que não cabe dentro de uma batalha: os hábitos de preparo, as Cinco Fases e os 17 companheiros. |
+| 04 | Fontes | Os 6 guias cruzados na elaboração da rota. |
 
 ## Três armadilhas que este guia resolve antes de acontecerem
 
@@ -55,7 +59,7 @@ pula descobre no fim da run, com os 70 feitiços impossíveis de completar.
 
 **O *Eye for an Eye* que não conta.** O troféu só conta invasores **NPC**. Com a
 invasão por jogadores ligada, um jogador real entra no lugar do NPC e a contagem
-não anda — por isso o passo 0.1 é desativar isso nas opções.
+não anda. O guia manda desativar isso antes da primeira missão.
 
 **O juramento do Cao Cao em co-op.** *Awakening of the Unscrupulous Hero* tem
 relatos de não estourar quando **Fall of the Corrupted Eunuch** é feita em co-op.
@@ -63,8 +67,8 @@ O guia manda fazer essa missão sozinho.
 
 ## Recursos
 
-- **Busca global**: procura ao mesmo tempo em passos, troféus, coletáveis e
-  batalhas, ignorando acentuação. Digite `Lu Bu`, `tábua`, `Guandu` ou `feitiço`.
+- **Busca global**: procura ao mesmo tempo em batalhas, troféus e coletáveis,
+  ignorando acentuação. Digite `Lu Bu`, `tábua`, `Guandu` ou `balista`.
 - **Progresso salvo automaticamente** em
   `%APPDATA%\StreamerSidekick\platinas\wolong\progress.json` — fora da pasta do
   plugin, então **sobrevive a atualizações**.
@@ -91,7 +95,7 @@ Também disponível no arquivo [`platinas-entry.json`](platinas-entry.json):
 {
   "id": "wolong",
   "name": "Wo Long — Platina",
-  "description": "Guia PT-BR do jogo base: as 46 batalhas na ordem, 75 coletáveis com local, as 145 bandeiras e os 51 troféus.",
+  "description": "Guia PT-BR do jogo base: as 46 batalhas na ordem, cada uma com seus troféus e coletáveis com foto.",
   "repo": "ricardothezouro-debug/Guia-de-Platina-Wolong",
   "ref": "main",
   "version": "1.0.0",
@@ -110,7 +114,7 @@ Também disponível no arquivo [`platinas-entry.json`](platinas-entry.json):
 src/platina_wolong/
   __init__.py
   module.py          contrato do plugin: module_info() / build_page() / help_text()
-  page.py            a página: as 9 abas, busca global, filtros e progresso
+  page.py            a página: as 4 abas, busca global, filtros e progresso
   guide_data.py      TODO o conteúdo do guia (único arquivo específico do jogo)
   progress.py        formato das chaves de progresso
   storage.py         progresso em %APPDATA% (genérico do template)
@@ -130,8 +134,8 @@ Duas mudanças em `image_loader.py`, as mesmas dos guias de DREDGE e House Flipp
    `QThread` ainda rodando e o Qt aborta o processo.
 
 `page.py` é próprio: o template genérico renderiza uma lista simples de troféus,
-o que descartaria 8 das 9 abas — e a aba de coletáveis filtrável por batalha é o
-que faz o guia ser usável **enquanto** você joga. O contrato do
+o que jogaria fora a estrutura que faz este guia funcionar — o card de batalha
+com bandeiras, troféus e coletáveis com foto no mesmo lugar. O contrato do
 `PLUGIN_STANDARD.md` (`module_info()` / `build_page()`) e os `objectName`s do
 design system são respeitados; as dependências são só PySide6 + stdlib.
 
@@ -143,6 +147,8 @@ esta platina.
 
 ## Créditos
 
-Guia não oficial, sem vínculo com a KOEI TECMO / Team NINJA. As imagens são de
-terceiros e estão creditadas nas legendas; as fontes da rota estão na aba
-**Fontes**.
+Guia não oficial, sem vínculo com a KOEI TECMO / Team NINJA.
+
+As **fotos dos 75 coletáveis** são do [PowerPyx](https://www.powerpyx.com/wo-long-fallen-dynasty-all-collectible-locations/),
+creditado na aba **Fontes**. Os ícones dos troféus vêm do CDN do Steam. Todas as
+imagens são carregadas sob demanda e ficam em cache local depois da primeira vez.

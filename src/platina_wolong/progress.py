@@ -1,29 +1,35 @@
 """Chaves de progresso do guia.
 
-O guia tem itens marcáveis em sete listas (rota, coletáveis, troféus, bandeiras
-por batalha, companheiros, fases e preparo). Este módulo centraliza o formato
-das chaves para que `module.py`, `page.py` e o importador/exportador falem a
-mesma língua.
+A espinha do guia é a batalha: cada uma tem a própria caixa de "concluída", a de
+"bandeiras completas" e as caixas dos coletáveis que estão dentro dela. Este
+módulo centraliza o formato das chaves para que `module.py`, `page.py` e o
+importador/exportador falem a mesma língua.
 """
 from __future__ import annotations
 
 from . import guide_data
 
+HUB_KEY = "hub"
 
-def step_key(num: str) -> str:
-    return "step_" + str(num).replace(".", "_")
+
+def mission_key(index: int) -> str:
+    return f"mission_{index}"
+
+
+def flag_key(index: int) -> str:
+    return f"flags_{index}"
 
 
 def collectible_key(index: int) -> str:
     return f"item_{index}"
 
 
+def close_key(index: int) -> str:
+    return f"close_{index}"
+
+
 def trophy_key(trophy_id: str) -> str:
     return f"trophy_{trophy_id}"
-
-
-def flag_key(index: int) -> str:
-    return f"flags_{index}"
 
 
 def companion_key(index: int) -> str:
@@ -51,16 +57,24 @@ def collectible_keys(kind: str | None = None) -> list[str]:
     ]
 
 
-def flag_keys() -> list[str]:
-    return [flag_key(i) for i in range(len(guide_data.MISSIONS))]
+def collectibles_of(mission_name: str) -> list[tuple[int, dict]]:
+    """Os coletáveis de uma batalha, com o índice global de cada um."""
+    return [
+        (i, c) for i, c in enumerate(guide_data.COLLECTIBLES)
+        if c["mission"] == mission_name
+    ]
 
 
 def all_keys() -> list[str]:
     """Todas as chaves marcáveis do guia, na ordem das abas."""
-    keys = [step_key(step["num"]) for step in guide_data.ROUTE]
+    keys: list[str] = []
+    for i in range(len(guide_data.MISSIONS)):
+        keys.append(mission_key(i))
+        keys.append(flag_key(i))
+    keys.append(HUB_KEY)
     keys += collectible_keys()
+    keys += [close_key(i) for i in range(len(guide_data.CLOSE))]
     keys += trophy_keys()
-    keys += flag_keys()
     keys += [companion_key(i) for i in range(len(guide_data.COMPANIONS))]
     keys += [phase_key(i) for i in range(len(guide_data.PHASES))]
     keys += [prep_key(i) for i in range(len(guide_data.PREP))]

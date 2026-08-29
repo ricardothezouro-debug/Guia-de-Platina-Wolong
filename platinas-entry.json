@@ -1,7 +1,7 @@
 {
   "id": "wolong",
   "name": "Wo Long — Platina",
-  "description": "Guia PT-BR do jogo base: as 46 batalhas na ordem, 75 coletáveis com local, as 145 bandeiras e os 51 troféus.",
+  "description": "Guia PT-BR do jogo base: as 46 batalhas na ordem, cada uma com seus troféus e coletáveis com foto.",
   "repo": "ricardothezouro-debug/Guia-de-Platina-Wolong",
   "ref": "main",
   "version": "1.0.0",
