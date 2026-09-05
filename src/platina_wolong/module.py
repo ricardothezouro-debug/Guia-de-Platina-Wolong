@@ -38,6 +38,8 @@ def module_info():
 
 
 def help_text() -> str:
+
+    from .paths import guide_dir_label
     return (
         "Guia de platina de Wo Long: Fallen Dynasty (jogo base) em PT-BR.\n\n"
         "Em Wo Long tudo acontece dentro de uma batalha, então o guia é uma lista de "
@@ -56,7 +58,7 @@ def help_text() -> str:
         "relatos de bug em co-op.\n\n"
         "E uma armadilha: a batalha secundária Wizardry Spell Mastery (Parte 3) é o "
         "que libera os feitiços de tier alto. Sem ela, o Wizardry Master é impossível.\n\n"
-        "O progresso é salvo em %APPDATA%/StreamerSidekick/platinas/wolong/ e "
+        f"O progresso é salvo em {guide_dir_label()} e "
         "sobrevive a atualizações."
     )
 
